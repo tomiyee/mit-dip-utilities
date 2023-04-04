@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import cv2
 from PIL import Image
+from typing import Tuple
 
 def print_image(image: np.ndarray) -> None:
   """
@@ -17,7 +18,8 @@ def print_image(image: np.ndarray) -> None:
   plt.imshow(image.astype(np.uint8), cmap='gray')
   plt.axis('off')
   plt.show()
-    
+
+
 def load_image(filename: str) -> np.ndarray:
   """
   Loads an image from a file and converts it to grayscale using OpenCV.
@@ -48,6 +50,7 @@ def save_image(image: np.ndarray, filename: str) -> None:
       im = im.convert('RGB')
   im.save(filename)
 
+
 def visualize_spectrum(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
   """
   Computes the magnitude spectrum and phase spectrum of an input image.
@@ -71,7 +74,8 @@ def visualize_spectrum(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
   # Compute the phase spectrum by taking the complex angle of the Fourier transform
   phase_spectrum = np.angle(shifted_transform)
   return magnitude_spectrum, phase_spectrum
-  
+
+
 def plot_image_fft(image: np.ndarray, include_spatial: bool = False, label: str = "Image") -> None:
   """
   Plots the magnitude and phase of the Fourier transform of a given image.
