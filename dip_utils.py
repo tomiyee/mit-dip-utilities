@@ -125,6 +125,7 @@ def save_image(image: np.ndarray, filename: str) -> None:
       im = im.convert('RGB')
   im.save(filename)
 
+
 def visualize_spectrum(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
   """
   Computes the magnitude spectrum and phase spectrum of an input image.
@@ -149,6 +150,7 @@ def visualize_spectrum(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
   phase_spectrum = np.angle(shifted_transform)
   return magnitude_spectrum, phase_spectrum
   
+
 def plot_image_fft(image: np.ndarray, include_spatial: bool = False, label: str = "Image") -> None:
   """
   Plots the magnitude and phase of the Fourier transform of a given image.
@@ -180,3 +182,72 @@ def plot_image_fft(image: np.ndarray, include_spatial: bool = False, label: str 
   axs[1+include_spatial].axis("off")
 
   plt.show()
+
+def motion_blur_transfer_fn(M: int, N: int, a: float, b: float) -> np.ndarray:
+  """Compute the transfer function for motion blur given the image dimensions and blur parameters.
+
+  Args:
+      M (int): The height of the image.
+      N (int): The width of the image.
+      a (float): The horizontal blur parameter.
+      b (float): The vertical blur parameter.
+
+  Returns:
+      np.ndarray: The transfer function for motion blur.
+  """
+  v, u = np.meshgrid(range(-N//2+1, N//2+1), range(-M//2+1, M//2+1))
+  val = u*a+v*b
+  sinc_val = np.sinc(np.pi*val)
+  transfer_function = np.exp(-1j*np.pi*val)*sinc_val
+  return transfer_function
+
+
+def motion_blur(image: np.ndarray, a: float, b: float) -> Tuple[np.ndarray, np.ndarray]:
+  """Apply motion blur to an image using the specified blur parameters.
+
+  Args:
+      image (np.ndarray): The input image as a 2D numpy array.
+      a (float): The horizontal blur parameter.
+      b (float): The vertical blur parameter.
+
+  Returns:
+      Tuple[np.ndarray, np.ndarray]: A tuple containing the filtered image and the transfer function.
+  """
+  M, N = image.shape
+  filter_fn = motion_blur_transfer_fn(M, N, a, b)
+  img_fft_shift = np.fft.fftshift(np.fft.fft2(image))
+  filtered_image = np.fft.ifft2(np.fft.ifftshift(img_fft_shift * filter_fn)).real
+  return filtered_image, filter_fn
+
+  
+def get_gaussian(M: int, N: int, sigma: float) -> np.ndarray:
+  """Compute a 2D Gaussian filter with the given dimensions and standard deviation.
+
+  Args:
+      M (int): The height of the filter.
+      N (int): The width of the filter.
+      sigma (float): The standard deviation of the Gaussian.
+
+  Returns:
+      np.ndarray: A 2D numpy array representing the Gaussian filter.
+  """
+  v, u = np.meshgrid(range(-N//2+1, N//2+1), range(-M//2+1, M//2+1))
+  gaussian = np.exp(-(u**2 + v**2) / (2*sigma**2))
+  return gaussian
+
+
+def apply_filter_fn(image: np.ndarray, filter_fn: np.ndarray) -> np.ndarray:
+  """Apply a given filter to an image.
+
+  Args:
+      image (np.ndarray): The input image as a 2D numpy array.
+      filter_fn (np.ndarray): The filter as a 2D numpy array.
+
+  Returns:
+      np.ndarray: The filtered image as a 2D numpy array.
+  """
+  assert image.shape == filter_fn.shape
+  image_fft = np.fft.fftshift(np.fft.fft2(image))
+  filtered_fft = image_fft * filter_fn
+  filtered_image = np.fft.ifft2(np.fft.ifftshift(filtered_fft))
+  return filtered_image.real
